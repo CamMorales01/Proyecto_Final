@@ -69,8 +69,10 @@ public class VistaSimulacion extends JFrame{
 
         // Panel principal para la simulación
         panelGrid = new JPanel();
-        panelGrid.setBackground(Color.DARK_GRAY);
-        add(new JScrollPane(panelGrid), BorderLayout.CENTER);
+        panelGrid.setBackground(Color.WHITE);
+        JScrollPane scrollPane = new JScrollPane(panelGrid);
+        scrollPane.setPreferredSize(new Dimension(800, 600));
+        add(scrollPane, BorderLayout.CENTER);
 
         pack();
         setLocationRelativeTo(null);
@@ -112,13 +114,14 @@ public class VistaSimulacion extends JFrame{
 
     private void actualizarGrid(Ciudad ciudad) {
         panelGrid.removeAll();
-        panelGrid.setLayout(new GridLayout(ciudad.getFilas(), ciudad.getColumnas(), 1, 1));
+        panelGrid.setLayout(new GridLayout(ciudad.getFilas(), ciudad.getColumnas(), 2, 2));
+        panelGrid.setBackground(Color.WHITE);
 
         Calle[][] grid = ciudad.getGrid();
 
         for (int i = 0; i < ciudad.getFilas(); i++) {
             for (int j = 0; j < ciudad.getColumnas(); j++) {
-                JPanel celda = crearCeldaCalle(grid[i][j]);
+                JPanel celda = crearCeldaCiudad(grid[i][j], i, j);
                 panelGrid.add(celda);
             }
         }
@@ -127,57 +130,116 @@ public class VistaSimulacion extends JFrame{
         panelGrid.repaint();
     }
 
-    private JPanel crearCeldaCalle(Calle calle) {
-        JPanel celda = new JPanel();
-        celda.setPreferredSize(new Dimension(40, 40));
-        celda.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+    private JPanel crearCeldaCiudad(Calle calle, int fila, int columna) {
+        JPanel celda = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        // Color base según dirección
-        Color colorBase = obtenerColorDireccion(calle.getDireccionFlujo());
-        celda.setBackground(colorBase);
+                int width = getWidth();
+                int height = getHeight();
 
-        // Añadir información visual
-        StringBuilder info = new StringBuilder();
+                // Determinar si es intersección (cada 3 celdas aproximadamente)
+                boolean esInterseccion = (fila % 3 == 0 && columna % 3 == 0);
+                boolean esCalleHorizontal = fila % 3 == 0;
+                boolean esCalleVertical = columna % 3 == 0;
+                boolean esCalle = esCalleHorizontal || esCalleVertical;
 
-        // Semáforo
-        if (calle.tieneSemaforo()) {
-            Color colorSemaforo = calle.getSemaforo().getEstado() == EstadoSemaforo.VERDE
-                    ? Color.GREEN : Color.RED;
-            celda.setBorder(BorderFactory.createLineBorder(colorSemaforo, 3));
-            info.append("S");
-        }
+                if (esCalle) {
+                    // Dibujar calle (fondo blanco/gris claro)
+                    g2d.setColor(Color.WHITE);
+                    g2d.fillRect(0, 0, width, height);
 
-        // Vehículos
-        if (!calle.getVehiculos().isEmpty()) {
-            info.append("V").append(calle.getVehiculos().size());
-            celda.setBackground(celda.getBackground().darker());
-        }
+                    // Dibujar líneas de la calle
+                    g2d.setColor(Color.LIGHT_GRAY);
+                    g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{3}, 0));
 
-        // Eventos
-        if (!calle.getEventos().isEmpty()) {
-            EventoEspecial evento = calle.getEventos().get(0);
-            switch (evento.getTipo()) {
-                case ACCIDENTE:
-                    celda.setBackground(Color.RED.darker());
-                    info.append("A");
-                    break;
-                case ESTADO_VIA:
-                    celda.setBackground(Color.ORANGE);
-                    info.append("E");
-                    break;
-                case TRAFICO:
-                    celda.setBackground(Color.YELLOW.darker());
-                    info.append("T");
-                    break;
+                    // Líneas direccionales según el flujo
+                    Direccion direccion = calle.getDireccionFlujo();
+                    switch (direccion) {
+                        case ESTE:
+                            g2d.drawLine(5, height/2, width-5, height/2);
+                            // Flecha
+                            g2d.drawLine(width-10, height/2-3, width-5, height/2);
+                            g2d.drawLine(width-10, height/2+3, width-5, height/2);
+                            break;
+                        case OESTE:
+                            g2d.drawLine(5, height/2, width-5, height/2);
+                            // Flecha
+                            g2d.drawLine(10, height/2-3, 5, height/2);
+                            g2d.drawLine(10, height/2+3, 5, height/2);
+                            break;
+                        case NORTE:
+                            g2d.drawLine(width/2, 5, width/2, height-5);
+                            // Flecha
+                            g2d.drawLine(width/2-3, 10, width/2, 5);
+                            g2d.drawLine(width/2+3, 10, width/2, 5);
+                            break;
+                        case SUR:
+                            g2d.drawLine(width/2, 5, width/2, height-5);
+                            // Flecha
+                            g2d.drawLine(width/2-3, height-10, width/2, height-5);
+                            g2d.drawLine(width/2+3, height-10, width/2, height-5);
+                            break;
+                    }
+
+                    // Dibujar semáforo si existe
+                    if (calle.tieneSemaforo() && esInterseccion) {
+                        Color colorSemaforo = calle.getSemaforo().getEstado() == EstadoSemaforo.VERDE
+                                ? Color.GREEN : Color.RED;
+                        g2d.setColor(colorSemaforo);
+                        g2d.fillRect(width/2-4, height/2-4, 8, 8);
+                        g2d.setColor(Color.BLACK);
+                        g2d.drawRect(width/2-4, height/2-4, 8, 8);
+                    }
+
+                    // Dibujar vehículos
+                    if (!calle.getVehiculos().isEmpty()) {
+                        int numVehiculos = Math.min(calle.getVehiculos().size(), 3);
+                        for (int i = 0; i < numVehiculos; i++) {
+                            g2d.setColor(Color.BLACK);
+                            int offsetX = (i * 8) - (numVehiculos * 4) + width/2;
+                            int offsetY = height/2 - 2;
+
+                            // Dibujar pequeño rectángulo como vehículo
+                            g2d.fillRect(offsetX, offsetY, 6, 4);
+                        }
+                    }
+
+                    // Dibujar eventos especiales
+                    if (!calle.getEventos().isEmpty()) {
+                        EventoEspecial evento = calle.getEventos().get(0);
+                        switch (evento.getTipo()) {
+                            case ACCIDENTE:
+                                g2d.setColor(Color.RED);
+                                g2d.fillOval(width/2-6, height/2-6, 12, 12);
+                                g2d.setColor(Color.WHITE);
+                                g2d.drawString("X", width/2-3, height/2+3);
+                                break;
+                            case ESTADO_VIA:
+                                g2d.setColor(Color.ORANGE);
+                                g2d.fillRect(2, 2, width-4, height-4);
+                                break;
+                            case TRAFICO:
+                                g2d.setColor(new Color(255, 255, 0, 100));
+                                g2d.fillRect(0, 0, width, height);
+                                break;
+                        }
+                    }
+                } else {
+                    // Dibujar manzana/bloque (gris)
+                    g2d.setColor(new Color(200, 200, 200));
+                    g2d.fillRect(0, 0, width, height);
+                    g2d.setColor(Color.GRAY);
+                    g2d.drawRect(0, 0, width-1, height-1);
+                }
             }
-        }
+        };
 
-        if (info.length() > 0) {
-            JLabel label = new JLabel(info.toString(), SwingConstants.CENTER);
-            label.setForeground(Color.WHITE);
-            label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 10));
-            celda.add(label);
-        }
+        celda.setPreferredSize(new Dimension(30, 30));
+        celda.setBackground(Color.WHITE);
 
         return celda;
     }
@@ -225,5 +287,4 @@ public class VistaSimulacion extends JFrame{
     public void mostrarMensaje(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje);
     }
-
 }
