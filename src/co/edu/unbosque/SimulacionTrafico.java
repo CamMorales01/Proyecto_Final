@@ -15,4 +15,6 @@ public class SimulacionTrafico {
             vista.setVisible(true);
         });
     }
+
+    // pruebas
 }
