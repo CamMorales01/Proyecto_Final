@@ -2,6 +2,9 @@ package co.edu.unbosque.model;
 
 import java.util.*;
 
+/**
+ * Clase que representa una ciudad con un grid de calles, vehículos y semáforos.
+ */
 public class Ciudad {
     private int filas, columnas;
     private Calle[][] grid;
@@ -10,6 +13,11 @@ public class Ciudad {
     private Random random;
     private int turnoActual;
 
+    /**
+     * Constructor de la clase Ciudad.
+     * @param filas Número de filas del grid.
+     * @param columnas Número de columnas del grid.
+    */
     public Ciudad(int filas, int columnas) {
         this.filas = filas;
         this.columnas = columnas;
@@ -21,16 +29,16 @@ public class Ciudad {
         inicializarCiudad();
     }
 
+    /**
+     * Inicializa la ciudad creando calles, semáforos y vehículos.
+     */
     private void inicializarCiudad() {
-        // Inicializar calles con direcciones aleatorias
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 Direccion direccion = Direccion.values()[random.nextInt(4)];
                 grid[i][j] = new Calle(new Posicion(i, j), direccion);
             }
         }
-
-        // Colocar semáforos (mínimo 10)
         int numSemaforos = Math.max(10, (filas * columnas) / 10);
         for (int i = 0; i < numSemaforos; i++) {
             int x, y;
@@ -42,11 +50,12 @@ public class Ciudad {
             grid[x][y].agregarSemaforo();
             semaforos.add(grid[x][y].getSemaforo());
         }
-
-        // Generar vehículos iniciales
         generarVehiculosAleatorios();
     }
 
+    /**
+     * Genera vehículos aleatorios en la ciudad.
+     */
     private void generarVehiculosAleatorios() {
         int numVehiculos = random.nextInt(filas * columnas / 4) + 5;
         for (int i = 0; i < numVehiculos; i++) {
@@ -61,30 +70,35 @@ public class Ciudad {
         }
     }
 
+    /**
+     * Simula un turno en la ciudad, actualizando el estado de calles, semáforos y vehículos.
+     */
     public void simularTurno() {
         turnoActual++;
 
-        // Actualizar calles y semáforos
+        //Actualizar calles y semáforos
         for (int i = 0; i < filas; i++) {
             for (int j = 0; j < columnas; j++) {
                 grid[i][j].actualizar();
             }
         }
 
-        // Mover vehículos
         moverVehiculos();
 
-        // Generar eventos especiales aleatorios
-        if (random.nextDouble() < 0.1) { // 10% probabilidad por turno
+        //Generar eventos especiales aleatorios
+        if (random.nextDouble() < 0.1) {
             generarEventoEspecial();
         }
 
-        // Agregar nuevos vehículos ocasionalmente
-        if (random.nextDouble() < 0.3) { // 30% probabilidad por turno
+        //Agregar nuevos vehículos
+        if (random.nextDouble() < 0.3) {
             agregarNuevoVehiculo();
         }
     }
 
+    /**
+     * Mueve los vehículos en la ciudad según su velocidad y dirección.
+     */
     private void moverVehiculos() {
         List<Vehiculo> vehiculosAMover = new ArrayList<>(vehiculos);
 
@@ -97,26 +111,26 @@ public class Ciudad {
             Posicion posActual = vehiculo.getPosicion();
             Calle calleActual = grid[posActual.getX()][posActual.getY()];
 
-            // Verificar obstáculos
+            //Verificar obstáculos
             if (calleActual.estaBloqueda()) {
                 vehiculo.detener();
                 continue;
             }
 
-            // Calcular nueva posición
+            //Nueva posición
             Posicion nuevaPos = calcularNuevaPosicion(vehiculo);
 
             if (nuevaPos != null && esPosicionValida(nuevaPos)) {
                 Calle nuevaCalle = grid[nuevaPos.getX()][nuevaPos.getY()];
 
-                // Verificar si hay vehículo adelante
+                //Verificar si hay vehículo adelante
                 boolean hayVehiculoAdelante = nuevaCalle.getVehiculos().stream()
                         .anyMatch(v -> v != vehiculo);
 
                 if (hayVehiculoAdelante) {
                     vehiculo.desacelerar();
                 } else {
-                    // Mover vehículo
+                    //Mover vehículo
                     calleActual.removerVehiculo(vehiculo);
                     vehiculo.setPosicion(nuevaPos);
                     vehiculo.setDireccion(nuevaCalle.getDireccionFlujo());
@@ -124,19 +138,24 @@ public class Ciudad {
                     vehiculo.acelerar();
                 }
             } else {
-                // Vehículo sale del mapa
+                //Vehículo sale del mapa
                 calleActual.removerVehiculo(vehiculo);
                 vehiculos.remove(vehiculo);
             }
         }
     }
 
+    /**
+     * Calcula la nueva posición de un vehículo según su dirección y velocidad.
+     * @param vehiculo Vehículo a mover.
+     * @return Nueva posición del vehículo.
+     */
     private Posicion calcularNuevaPosicion(Vehiculo vehiculo) {
         Posicion pos = vehiculo.getPosicion();
         Direccion dir = vehiculo.getDireccion();
 
-        // Avanzar media cuadrícula según la velocidad
-        if (vehiculo.getVelocidad() < 0.5) return pos; // No se mueve si es muy lento
+        //Avanzar media cuadrícula según la velocidad
+        if (vehiculo.getVelocidad() < 0.5) return pos;
 
         switch (dir) {
             case NORTE: return new Posicion(pos.getX() - 1, pos.getY());
@@ -147,10 +166,18 @@ public class Ciudad {
         }
     }
 
+    /**
+     * Verifica si una posición es válida dentro del grid de la ciudad.
+     * @param pos Posición a verificar.
+     * @return true si la posición es válida, false en caso contrario.
+     */
     private boolean esPosicionValida(Posicion pos) {
         return pos.getX() >= 0 && pos.getX() < filas && pos.getY() >= 0 && pos.getY() < columnas;
     }
 
+    /**
+     * Genera un evento especial aleatorio en la ciudad.
+     */
     private void generarEventoEspecial() {
         int x = random.nextInt(filas);
         int y = random.nextInt(columnas);
@@ -160,8 +187,10 @@ public class Ciudad {
         grid[x][y].agregarEvento(evento);
     }
 
+    /**
+     * Agrega un nuevo vehículo en una posición aleatoria del borde del mapa.
+     */
     private void agregarNuevoVehiculo() {
-        // Agregar vehículo en el borde del mapa
         int lado = random.nextInt(4);
         int x, y;
 
@@ -181,10 +210,34 @@ public class Ciudad {
     }
 
     // Getters
+    /**
+     * Devuelve el número de filas del grid.
+     * @return Número de filas.
+     */
     public int getFilas() { return filas; }
+    /**
+     * Devuelve el número de columnas del grid.
+     * @return Número de columnas.
+     */
     public int getColumnas() { return columnas; }
+    /**
+     * Devuelve el grid de calles de la ciudad.
+     * @return Matriz de calles.
+     */
     public Calle[][] getGrid() { return grid; }
+    /**
+     * Devuelve la lista de vehículos en la ciudad.
+     * @return Lista de vehículos.
+     */
     public List<Vehiculo> getVehiculos() { return vehiculos; }
+    /**
+     * Devuelve la lista de semáforos en la ciudad.
+     * @return Lista de semáforos.
+     */
     public List<Semaforo> getSemaforos() { return semaforos; }
+    /**
+     * Devuelve el número de turnos simulados.
+     * @return Número de turnos.
+     */
     public int getTurnoActual() { return turnoActual; }
 }

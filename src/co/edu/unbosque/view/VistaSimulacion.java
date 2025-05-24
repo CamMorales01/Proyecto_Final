@@ -9,6 +9,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 
+/**
+ * Clase que implementa la interfaz gráfica de usuario para la simulación de tráfico.
+ * Extiende de JFrame y proporciona una representación visual del sistema de tráfico
+ * con controles interactivos.
+ */
 public class VistaSimulacion extends JFrame{
 
     private JPanel panelGrid;
@@ -23,16 +28,22 @@ public class VistaSimulacion extends JFrame{
     private Timer timer;
     private ControladorSimulacion controlador;
 
+    /**
+     * Constructor de la clase VistaSimulacion.
+     * Inicializa la interfaz gráfica y los componentes necesarios.
+     */
     public VistaSimulacion() {
         initComponents();
     }
 
+    /**
+     * Método que inicializa los componentes de la interfaz gráfica.
+     */
     private void initComponents() {
         setTitle("Simulación de Tráfico Vehicular");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        // Panel de controles
         JPanel panelControles = new JPanel(new FlowLayout());
 
         panelControles.add(new JLabel("Filas:"));
@@ -53,7 +64,6 @@ public class VistaSimulacion extends JFrame{
 
         add(panelControles, BorderLayout.NORTH);
 
-        // Panel de información
         JPanel panelInfo = new JPanel(new FlowLayout());
         labelTurno = new JLabel("Turno: 0");
         labelVehiculos = new JLabel("Vehículos: 0");
@@ -67,7 +77,7 @@ public class VistaSimulacion extends JFrame{
 
         add(panelInfo, BorderLayout.SOUTH);
 
-        // Panel principal para la simulación
+        //Panel principal
         panelGrid = new JPanel();
         panelGrid.setBackground(Color.WHITE);
         JScrollPane scrollPane = new JScrollPane(panelGrid);
@@ -78,6 +88,10 @@ public class VistaSimulacion extends JFrame{
         setLocationRelativeTo(null);
     }
 
+    /**
+     * Método que establece el controlador de la simulación.
+     * @param controlador Controlador de la simulación
+     */
     public void setControlador(ControladorSimulacion controlador) {
         this.controlador = controlador;
 
@@ -100,18 +114,25 @@ public class VistaSimulacion extends JFrame{
         });
     }
 
+    /**
+     * Método que actualiza la vista de la simulación con la información de la ciudad.
+     * @param ciudad Ciudad a mostrar en la vista
+     */
     public void actualizarVista(Ciudad ciudad) {
         SwingUtilities.invokeLater(() -> {
-            // Actualizar información
+
             labelTurno.setText("Turno: " + ciudad.getTurnoActual());
             labelVehiculos.setText("Vehículos: " + ciudad.getVehiculos().size());
             labelSemaforos.setText("Semáforos: " + ciudad.getSemaforos().size());
 
-            // Actualizar grid visual
             actualizarGrid(ciudad);
         });
     }
 
+    /**
+     * Método que actualiza el grid de la ciudad en la vista.
+     * @param ciudad Ciudad a mostrar en el grid
+     */
     private void actualizarGrid(Ciudad ciudad) {
         panelGrid.removeAll();
         panelGrid.setLayout(new GridLayout(ciudad.getFilas(), ciudad.getColumnas(), 2, 2));
@@ -130,6 +151,13 @@ public class VistaSimulacion extends JFrame{
         panelGrid.repaint();
     }
 
+    /**
+     * Método que crea una celda de la ciudad en el grid.
+     * @param calle Calle a mostrar en la celda
+     * @param fila Fila de la celda
+     * @param columna Columna de la celda
+     * @return JPanel representando la celda de la ciudad
+     */
     private JPanel crearCeldaCiudad(Calle calle, int fila, int columna) {
         JPanel celda = new JPanel() {
             @Override
@@ -140,52 +168,46 @@ public class VistaSimulacion extends JFrame{
 
                 int width = getWidth();
                 int height = getHeight();
-
-                // Determinar si es intersección (cada 3 celdas aproximadamente)
                 boolean esInterseccion = (fila % 3 == 0 && columna % 3 == 0);
                 boolean esCalleHorizontal = fila % 3 == 0;
                 boolean esCalleVertical = columna % 3 == 0;
                 boolean esCalle = esCalleHorizontal || esCalleVertical;
 
                 if (esCalle) {
-                    // Dibujar calle (fondo blanco/gris claro)
                     g2d.setColor(Color.WHITE);
                     g2d.fillRect(0, 0, width, height);
-
-                    // Dibujar líneas de la calle
                     g2d.setColor(Color.LIGHT_GRAY);
                     g2d.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[]{3}, 0));
 
-                    // Líneas direccionales según el flujo
                     Direccion direccion = calle.getDireccionFlujo();
                     switch (direccion) {
                         case ESTE:
                             g2d.drawLine(5, height/2, width-5, height/2);
-                            // Flecha
+
                             g2d.drawLine(width-10, height/2-3, width-5, height/2);
                             g2d.drawLine(width-10, height/2+3, width-5, height/2);
                             break;
                         case OESTE:
                             g2d.drawLine(5, height/2, width-5, height/2);
-                            // Flecha
+
                             g2d.drawLine(10, height/2-3, 5, height/2);
                             g2d.drawLine(10, height/2+3, 5, height/2);
                             break;
                         case NORTE:
                             g2d.drawLine(width/2, 5, width/2, height-5);
-                            // Flecha
+
                             g2d.drawLine(width/2-3, 10, width/2, 5);
                             g2d.drawLine(width/2+3, 10, width/2, 5);
                             break;
                         case SUR:
                             g2d.drawLine(width/2, 5, width/2, height-5);
-                            // Flecha
+
                             g2d.drawLine(width/2-3, height-10, width/2, height-5);
                             g2d.drawLine(width/2+3, height-10, width/2, height-5);
                             break;
                     }
 
-                    // Dibujar semáforo si existe
+                    //Dibujar semáforo
                     if (calle.tieneSemaforo() && esInterseccion) {
                         Color colorSemaforo = calle.getSemaforo().getEstado() == EstadoSemaforo.VERDE
                                 ? Color.GREEN : Color.RED;
@@ -195,7 +217,7 @@ public class VistaSimulacion extends JFrame{
                         g2d.drawRect(width/2-4, height/2-4, 8, 8);
                     }
 
-                    // Dibujar vehículos
+                    //Dibujar vehículos
                     if (!calle.getVehiculos().isEmpty()) {
                         int numVehiculos = Math.min(calle.getVehiculos().size(), 3);
                         for (int i = 0; i < numVehiculos; i++) {
@@ -203,12 +225,11 @@ public class VistaSimulacion extends JFrame{
                             int offsetX = (i * 8) - (numVehiculos * 4) + width/2;
                             int offsetY = height/2 - 2;
 
-                            // Dibujar pequeño rectángulo como vehículo
                             g2d.fillRect(offsetX, offsetY, 6, 4);
                         }
                     }
 
-                    // Dibujar eventos especiales
+                    //Dibujar eventos especiales
                     if (!calle.getEventos().isEmpty()) {
                         EventoEspecial evento = calle.getEventos().get(0);
                         switch (evento.getTipo()) {
@@ -229,7 +250,6 @@ public class VistaSimulacion extends JFrame{
                         }
                     }
                 } else {
-                    // Dibujar manzana/bloque (gris)
                     g2d.setColor(new Color(200, 200, 200));
                     g2d.fillRect(0, 0, width, height);
                     g2d.setColor(Color.GRAY);
@@ -254,6 +274,10 @@ public class VistaSimulacion extends JFrame{
         }
     }
 
+    /**
+     * Método que obtiene el número de filas del grid.
+     * @return Número de filas
+     */
     public int getFilas() {
         try {
             return Integer.parseInt(fieldFilas.getText());
@@ -262,6 +286,10 @@ public class VistaSimulacion extends JFrame{
         }
     }
 
+    /**
+     * Método que obtiene el número de columnas del grid.
+     * @return Número de columnas
+     */
     public int getColumnas() {
         try {
             return Integer.parseInt(fieldColumnas.getText());
@@ -270,20 +298,31 @@ public class VistaSimulacion extends JFrame{
         }
     }
 
+    /**
+     * Método que inicia el temporizador de la simulación.
+     * @param listener ActionListener para manejar los eventos del temporizador
+     */
     public void iniciarTimer(ActionListener listener) {
         if (timer != null) {
             timer.stop();
         }
-        timer = new Timer(1000, listener); // 1 segundo por turno
+        timer = new Timer(1000, listener);
         timer.start();
     }
 
+    /**
+     * Método que detiene el temporizador de la simulación.
+     */
     public void pararTimer() {
         if (timer != null) {
             timer.stop();
         }
     }
 
+    /**
+     * Método que muestra un mensaje en un cuadro de diálogo.
+     * @param mensaje Mensaje a mostrar
+     */
     public void mostrarMensaje(String mensaje) {
         JOptionPane.showMessageDialog(this, mensaje);
     }
